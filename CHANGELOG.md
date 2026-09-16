@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0](https://github.com/Paubox/paubox-ruby/compare/v1.1.0...v1.2.0) (2026-09-16)
+
+
+### Features
+
+* add receiving (inbound email) endpoints ([#29](https://github.com/Paubox/paubox-ruby/issues/29)) ([aeda949](https://github.com/Paubox/paubox-ruby/commit/aeda9497215ce6d701af7eb37ec9ac895910e1b2))
+
 ## [1.1.0](https://github.com/Paubox/paubox-ruby/compare/v1.0.0...v1.1.0) (2026-09-09)
 
 
