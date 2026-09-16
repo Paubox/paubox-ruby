@@ -3,6 +3,7 @@
 module Paubox
   # Client sends API requests to Paubox API
   class Client
+    require 'cgi'
     require 'rest-client'
     require 'ostruct'
     attr_reader :api_key, :api_host, :api_protocol, :api_version
@@ -89,6 +90,76 @@ module Paubox
       url = request_endpoint("schedule/#{source_tracking_id}/cancel")
       response = RestClient.post(url, nil, auth_header)
       JSON.parse(response.body)
+    end
+
+    def list_receiving_domains
+      url = request_endpoint('receiving/domains')
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def create_receiving_domain(slug: nil)
+      url = request_endpoint('receiving/domains')
+      payload = { slug: slug }.compact.to_json
+      response = RestClient.post(url, payload, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def get_receiving_domain(id)
+      url = request_endpoint("receiving/domains/#{id}")
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def delete_receiving_domain(id)
+      url = request_endpoint("receiving/domains/#{id}")
+      response = RestClient.delete(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def list_receiving_mailboxes(domain_id)
+      url = request_endpoint("receiving/domains/#{domain_id}/mailboxes")
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def create_receiving_mailbox(domain_id, name:, password:, quota_bytes: nil)
+      url = request_endpoint("receiving/domains/#{domain_id}/mailboxes")
+      payload = { name: name, password: password, quota_bytes: quota_bytes }.compact.to_json
+      response = RestClient.post(url, payload, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def get_receiving_mailbox(domain_id, mailbox_id)
+      url = request_endpoint("receiving/domains/#{domain_id}/mailboxes/#{mailbox_id}")
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def delete_receiving_mailbox(domain_id, mailbox_id)
+      url = request_endpoint("receiving/domains/#{domain_id}/mailboxes/#{mailbox_id}")
+      response = RestClient.delete(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def list_received_emails(limit: nil, after: nil, before: nil)
+      params = { limit: limit, after: after, before: before }.compact
+      query = params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')
+      url = request_endpoint('receiving')
+      url = "#{url}?#{query}" unless query.empty?
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def get_received_email(email_id)
+      url = request_endpoint("receiving/#{email_id}")
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def get_received_email_attachment(email_id, blob_id)
+      url = request_endpoint("receiving/#{email_id}/attachments/#{blob_id}")
+      RestClient.get(url, auth_header)
     end
 
     def send_request(method: :get, payload: {}, path: '')
