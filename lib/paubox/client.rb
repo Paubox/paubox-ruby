@@ -162,6 +162,38 @@ module Paubox
       RestClient.get(url, auth_header)
     end
 
+    def list_webhook_endpoints
+      url = request_endpoint('webhook_endpoints')
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def create_webhook_endpoint(target_url:, events:, signing_key: nil, api_key: nil, active: true)
+      url = request_endpoint('webhook_endpoints')
+      payload = { target_url: target_url, events: events, active: active,
+                  signing_key: signing_key, api_key: api_key }.compact.to_json
+      response = RestClient.post(url, payload, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def get_webhook_endpoint(id)
+      url = request_endpoint("webhook_endpoints/#{id}")
+      response = RestClient.get(url, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def update_webhook_endpoint(id, **params)
+      url = request_endpoint("webhook_endpoints/#{id}")
+      response = RestClient.patch(url, params.to_json, auth_header)
+      JSON.parse(response.body)
+    end
+
+    def delete_webhook_endpoint(id)
+      url = request_endpoint("webhook_endpoints/#{id}")
+      response = RestClient.delete(url, auth_header)
+      JSON.parse(response.body)
+    end
+
     def send_request(method: :get, payload: {}, path: '')
       url = request_endpoint(path)
 
