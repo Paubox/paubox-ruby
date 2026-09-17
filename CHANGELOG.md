@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0](https://github.com/Paubox/paubox-ruby/compare/v1.2.0...v1.3.0) (2026-09-17)
+
+
+### Features
+
+* webhook endpoint CRUD support ([#31](https://github.com/Paubox/paubox-ruby/issues/31)) ([1d78b47](https://github.com/Paubox/paubox-ruby/commit/1d78b4743658d81461ae2b6154ccf13209e6b329))
+
 ## [1.2.0](https://github.com/Paubox/paubox-ruby/compare/v1.1.0...v1.2.0) (2026-09-16)
 
 
