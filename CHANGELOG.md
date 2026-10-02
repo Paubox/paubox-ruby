@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1](https://github.com/Paubox/paubox-ruby/compare/v1.3.0...v1.3.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **receiving:** key attachment downloads on attachment_id and pass list filters ([#33](https://github.com/Paubox/paubox-ruby/issues/33)) ([875dea3](https://github.com/Paubox/paubox-ruby/commit/875dea3c1f897286061766aac6f73070288f4eab))
+
 ## [1.3.0](https://github.com/Paubox/paubox-ruby/compare/v1.2.0...v1.3.0) (2026-09-17)
 
 
