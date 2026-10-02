@@ -92,37 +92,77 @@ RSpec.describe Paubox::Client do
     end
   end
 
+  let(:email_id) { '0b7f3c1e-9a4d-4c55-8f2e-6d1a2b3c4d5e' }
+  let(:attachment_id) { '5e4d3c2b-1a0f-4e9d-8c7b-6a5f4e3d2c1b' }
+  let(:attachment) do
+    { id: attachment_id, filename: 'report.pdf', content_type: 'application/pdf', size: 2048,
+      content_id: nil, download_url: "#{base}/receiving/#{email_id}/attachments/#{attachment_id}" }
+  end
+
   describe '#list_received_emails' do
-    it 'returns emails' do
+    it 'returns emails keyed by their Paubox email_id' do
+      item = { email_id: email_id, from: [{ name: 'Sender', address: 'sender@example.com' }],
+               to: [{ name: nil, address: 'inbox@test.inbound.paubox.email' }], subject: nil,
+               received_at: '2026-10-01T12:00:00Z', has_attachment: true, spam: false, size: 4096,
+               domain: 'test.inbound.paubox.email' }
       stub_request(:get, "#{base}/receiving")
-        .to_return(body: { object: 'list', data: [], has_more: false }.to_json)
+        .to_return(body: { object: 'list', data: [item], has_more: false }.to_json)
       result = client.list_received_emails
-      expect(result['data']).to eq []
+      expect(result['data'].first['email_id']).to eq email_id
     end
 
-    it 'passes query params' do
-      stub_request(:get, "#{base}/receiving?limit=10&after=abc")
+    it 'passes pagination params' do
+      stub_request(:get, "#{base}/receiving?limit=10&after=#{email_id}")
         .to_return(body: { object: 'list', data: [], has_more: false }.to_json)
-      result = client.list_received_emails(limit: 10, after: 'abc')
+      result = client.list_received_emails(limit: 10, after: email_id)
       expect(result['has_more']).to eq false
+    end
+
+    it 'passes search, sort and ascending params' do
+      stub_request(:get, "#{base}/receiving?before=#{email_id}&search=lab+results&sort=received_at&ascending=false")
+        .to_return(body: { object: 'list', data: [], has_more: false }.to_json)
+      result = client.list_received_emails(before: email_id, search: 'lab results', sort: 'received_at',
+                                           ascending: false)
+      expect(result['data']).to eq []
     end
   end
 
   describe '#get_received_email' do
-    it 'returns an email by id' do
-      stub_request(:get, "#{base}/receiving/eaaaaab")
-        .to_return(body: { data: { email_id: 'eaaaaab', subject: 'Test' } }.to_json)
-      result = client.get_received_email('eaaaaab')
+    it 'returns an email by its Paubox email_id with attachment ids' do
+      detail = { email_id: email_id, from: [{ name: nil, address: 'sender@example.com' }], to: [], cc: [],
+                 subject: 'Test', date: nil, received_at: '2026-10-01T12:00:00Z', message_id: ['<a@example.com>'],
+                 in_reply_to: nil, references: nil, spam: false, spam_score: nil, text_body: 'hi', html_body: nil,
+                 attachments: [attachment], size: 4096,
+                 authentication: { spf: 'pass', dkim: 'pass', dmarc: 'pass' },
+                 domain: 'test.inbound.paubox.email', headers: [{ name: 'Subject', value: 'Test' }] }
+      stub_request(:get, "#{base}/receiving/#{email_id}")
+        .to_return(body: { data: detail }.to_json)
+      result = client.get_received_email(email_id)
       expect(result['data']['subject']).to eq 'Test'
+      expect(result['data']['attachments'].first['id']).to eq attachment_id
     end
   end
 
   describe '#get_received_email_attachment' do
-    it 'returns attachment bytes' do
-      stub_request(:get, "#{base}/receiving/eaaaaab/attachments/blob123")
-        .to_return(body: 'binary-data', headers: { 'Content-Type' => 'application/pdf' })
-      response = client.get_received_email_attachment('eaaaaab', 'blob123')
-      expect(response.body).to eq 'binary-data'
+    let(:bytes) { "%PDF-1.7\n\x00\xFF\xFE binary".b }
+
+    it 'downloads raw attachment bytes by attachment id without parsing JSON' do
+      stub_request(:get, "#{base}/receiving/#{email_id}/attachments/#{attachment_id}")
+        .with(headers: { 'Accept' => '*/*', 'Authorization' => 'Token token=test_key' })
+        .to_return(body: bytes, headers: { 'Content-Type' => 'application/pdf',
+                                           'Content-Disposition' => 'attachment; filename="report.pdf"' })
+      response = client.get_received_email_attachment(email_id, attachment_id)
+      expect(response.body.b).to eq bytes
+      expect(response.headers[:content_type]).to eq 'application/pdf'
+      expect(response.headers[:content_disposition]).to eq 'attachment; filename="report.pdf"'
+    end
+
+    it 'returns the body when no filename is known' do
+      stub_request(:get, "#{base}/receiving/#{email_id}/attachments/#{attachment_id}")
+        .to_return(body: 'plain', headers: { 'Content-Type' => 'application/octet-stream' })
+      response = client.get_received_email_attachment(email_id, attachment_id)
+      expect(response.body).to eq 'plain'
+      expect(response.headers).not_to include(:content_disposition)
     end
   end
 end
