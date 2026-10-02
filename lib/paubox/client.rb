@@ -142,8 +142,9 @@ module Paubox
       JSON.parse(response.body)
     end
 
-    def list_received_emails(limit: nil, after: nil, before: nil)
-      params = { limit: limit, after: after, before: before }.compact
+    def list_received_emails(limit: nil, after: nil, before: nil, search: nil, sort: nil, ascending: nil)
+      params = { limit: limit, after: after, before: before,
+                 search: search, sort: sort, ascending: ascending }.compact
       query = params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')
       url = request_endpoint('receiving')
       url = "#{url}?#{query}" unless query.empty?
@@ -157,9 +158,9 @@ module Paubox
       JSON.parse(response.body)
     end
 
-    def get_received_email_attachment(email_id, blob_id)
-      url = request_endpoint("receiving/#{email_id}/attachments/#{blob_id}")
-      RestClient.get(url, auth_header)
+    def get_received_email_attachment(email_id, attachment_id)
+      url = request_endpoint("receiving/#{email_id}/attachments/#{attachment_id}")
+      RestClient.get(url, auth_header.merge(accept: '*/*'))
     end
 
     def list_webhook_endpoints
