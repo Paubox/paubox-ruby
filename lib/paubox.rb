@@ -11,6 +11,7 @@ require 'paubox/email_disposition'
 require 'paubox/form'
 require 'paubox/form_submission'
 require 'paubox/forms_client'
+require 'paubox/webhooks_client'
 require 'mail/paubox'
 
 module Paubox
@@ -24,7 +25,7 @@ module Paubox
   end
 
   class Configuration
-    attr_accessor :api_key, :forms_api_key
+    attr_accessor :api_key, :forms_api_key, :webhooks_api_key
 
     # Deprecated: api_user is no longer used by the Email API client.
     # Kept only for backward compatibility; it has no effect on requests.
