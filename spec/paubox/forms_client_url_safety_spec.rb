@@ -94,7 +94,7 @@ RSpec.describe Paubox::FormsClient, 'URL path safety' do
   end
 
   describe 'valid UUIDs are unchanged in the URL' do
-    let(:find_url) { "https://api.paubox.com/forms/api/forms/#{valid_uuid}" }
+    let(:find_url) { "https://api.paubox.com/v1/forms/api/forms/#{valid_uuid}" }
 
     it 'sends the UUID verbatim (no double-encoding) for valid input' do
       stub_request(:get, find_url)

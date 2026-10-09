@@ -10,14 +10,14 @@ end
 RSpec.describe Paubox::FormsClient do
   let(:client)  { described_class.new }
   let(:form_id) { Helpers::FormHelper::FORM_ID }
-  let(:get_url)  { "https://api.paubox.com/forms/public/form_data/#{form_id}" }
-  let(:post_url) { "https://api.paubox.com/forms/api/forms/#{form_id}/submissions" }
+  let(:get_url)  { "https://api.paubox.com/v1/forms/public/form_data/#{form_id}" }
+  let(:post_url) { "https://api.paubox.com/v1/forms/api/forms/#{form_id}/submissions" }
 
   describe '#initialize' do
     it 'uses default host, protocol, and base' do
       expect(client.instance_variable_get(:@host)).to eq 'api.paubox.com'
       expect(client.instance_variable_get(:@protocol)).to eq 'https://'
-      expect(client.instance_variable_get(:@base)).to eq '/forms'
+      expect(client.instance_variable_get(:@base)).to eq '/v1/forms'
     end
 
     it 'allows host, protocol, and base override' do

@@ -178,7 +178,7 @@ Returns service health. No authentication required in practice.
 ### Base URL
 
 ```
-https://api.paubox.com/forms
+https://api.paubox.com/v1/forms
 ```
 
 ---

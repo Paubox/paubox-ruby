@@ -11,7 +11,7 @@ RSpec.describe Paubox::FormsClient do
   let(:api_key) { 'scoped-forms-api-key' }
   let(:client)  { described_class.new(api_key: api_key) }
   let(:form_id) { Helpers::FormHelper::FORM_ID }
-  let(:base_url) { 'https://api.paubox.com/forms/api/forms' }
+  let(:base_url) { 'https://api.paubox.com/v1/forms/api/forms' }
   let(:auth_header) { { 'Authorization' => "Bearer #{api_key}" } }
   let(:json_headers) { { 'Content-Type' => 'application/json' } }
 

@@ -15,7 +15,7 @@ lib/
   paubox/
     version.rb               # Gem version constant
     client.rb                # Email API client (authenticated, api.paubox.com)
-    forms_client.rb          # Forms API client (api.paubox.com/forms; Bearer auth on management endpoints)
+    forms_client.rb          # Forms API client (api.paubox.com/v1/forms; Bearer auth on management endpoints)
     message.rb               # Builds send-message API payload from a hash
     templated_message.rb     # Extends Message for template-based sends
     mail_to_message.rb       # Adapts Ruby Mail::Message to API payload
@@ -39,7 +39,7 @@ spec/
 | Class | Responsibility |
 |---|---|
 | `Paubox::Client` | Authenticated HTTP client for the Email API. Token auth via `Authorization: Token token=<key>`. Base URL: `https://api.paubox.com/v1`. |
-| `Paubox::FormsClient` | HTTP client for the Forms API. Base URL: `https://api.paubox.com/forms`. Public endpoints (`get_form`, `submit_form`) send no auth headers; management endpoints (list/create/find/update/archive/copy forms, stats, submissions, CSV/PDF export) require a "forms"-scoped API key sent as `Authorization: Bearer <api_key>`. |
+| `Paubox::FormsClient` | HTTP client for the Forms API. Base URL: `https://api.paubox.com/v1/forms`. Public endpoints (`get_form`, `submit_form`) send no auth headers; management endpoints (list/create/find/update/archive/copy forms, stats, submissions, CSV/PDF export) require a "forms"-scoped API key sent as `Authorization: Bearer <api_key>`. |
 | `Paubox::Message` | Builds the JSON payload for `/messages`. Accepts `from`, `to`, `cc`, `bcc`, `subject`, `text_content`, `html_content`, `attachments`. |
 | `Paubox::TemplatedMessage` | Extends `Message`; overrides `send_message_payload` to include `template_name` / `template_values`. |
 | `Paubox::MailToMessage` | Converts a `Mail::Message` object into a Paubox API payload. |

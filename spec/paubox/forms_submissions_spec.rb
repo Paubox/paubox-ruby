@@ -12,7 +12,7 @@ RSpec.describe Paubox::FormsClient, 'submissions' do
   let(:client)        { described_class.new(api_key: api_key) }
   let(:form_id)       { Helpers::FormSubmissionHelper::SUBMISSION_FORM_ID }
   let(:submission_id) { Helpers::FormSubmissionHelper::SUBMISSION_ID }
-  let(:base_url)      { "https://api.paubox.com/forms/api/forms/#{form_id}/submissions" }
+  let(:base_url)      { "https://api.paubox.com/v1/forms/api/forms/#{form_id}/submissions" }
   let(:auth_header)   { { 'Authorization' => "Bearer #{api_key}" } }
 
   before do

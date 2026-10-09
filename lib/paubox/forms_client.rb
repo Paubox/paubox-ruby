@@ -7,7 +7,7 @@ module Paubox
   class FormsClient
     FORMS_HOST     = 'api.paubox.com'
     FORMS_PROTOCOL = 'https://'
-    FORMS_BASE     = '/forms'
+    FORMS_BASE     = '/v1/forms'
 
     TIMEOUT_SECONDS = 30
 
