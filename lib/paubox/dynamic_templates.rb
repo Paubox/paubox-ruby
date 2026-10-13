@@ -16,10 +16,10 @@ module Paubox
       path = "dynamic_templates/#{id}"
       payload = {
         data: {
-          name: template_name,
-          body: File.new(template_file_path) 
-        }
-        }
+          name: template_name || name,
+          body: File.new(template_file_path)
+        }.compact
+      }
 
       Paubox::Client.new.send_request(method: :patch, payload: payload, path: path)
     end

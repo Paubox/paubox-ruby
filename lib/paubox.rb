@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'paubox/version'
 require 'paubox/client'
 require 'paubox/dynamic_templates'
