@@ -4,7 +4,7 @@ module Paubox
   # Utility methods for Message and MailToMessage
   module FormatHelper
     require 'base64'
-    BASE64_REGEX = %r(/^(?:[A-Za-z0-9+\/]{4}\n?)*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/).freeze
+    BASE64_REGEX = %r{\A(?:[A-Za-z0-9+/]{4}\r?\n?)*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\z}.freeze
 
     def base64_encoded?(value)
       return false unless value.is_a?(String)
