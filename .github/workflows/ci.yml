@@ -58,4 +58,11 @@ jobs:
             puts Paubox::Client.new.send(:api_base_endpoint)
             f = Paubox::FormsClient
             puts "#{f::FORMS_PROTOCOL}#{f::FORMS_HOST}#{f::FORMS_BASE}"
+            # The webhooks base is probed with /endpoints appended. The gateway
+            # scopes its rule to that one resource so the producers event-ingest
+            # route stays off the public host, which leaves the bare base
+            # unrouted by design — probing it directly would fail this check for
+            # a URL the client never requests on its own.
+            w = Paubox::WebhooksClient
+            puts "#{w::WEBHOOKS_PROTOCOL}#{w::WEBHOOKS_HOST}#{w::WEBHOOKS_BASE}/endpoints"
           ' | .github/scripts/route-check.sh

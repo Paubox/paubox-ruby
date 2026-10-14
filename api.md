@@ -281,3 +281,217 @@ client.submit_form('550e8400-e29b-41d4-a716-446655440000',
     { name: 'consent.pdf', content: Base64.strict_encode64(File.binread('consent.pdf')) }
   ])
 ```
+
+---
+
+## Webhooks API
+
+A webhook endpoint is a URL you own that Paubox notifies when something happens. These endpoints
+manage those subscriptions.
+
+### Authentication
+
+An API key scoped for the events you want, sent as a Bearer header:
+
+```
+Authorization: Bearer <SCOPED_API_KEY>
+```
+
+Not the Email API's `Token token=`. Which events a key may subscribe to follows from its scopes;
+the SDK does not inspect them, so an event the key is not scoped for returns 403 and an
+unrecognised one 422.
+
+**Available events**
+
+| Event | Fires when |
+| --- | --- |
+| `forms.submission.created` | A form submission is received |
+| `api_mail_log_delivered` | An Email API message is delivered |
+| `api_mail_log_opened` | A delivered message is opened |
+| `api_mail_log_temporary_failure` | Delivery fails temporarily |
+| `api_mail_log_permanent_failure` | Delivery fails permanently |
+| `email.inbound.received` | Inbound mail is received |
+
+The four Email API events keep their legacy `api_mail_log_` names, so a receiver written
+against the old Email API webhooks keeps working unchanged. Note these are the names on
+the wire: `delivered` or `failed` on their own are rejected as unknown.
+
+The SDK does not check these names. The catalog lives in the service, so an event added
+later works here without upgrading the SDK.
+
+### Base URL
+
+```
+https://api.paubox.com/v1/webhooks
+```
+
+Every request carries the `/endpoints` resource. The bare base is unrouted on the public gateway
+by design: the rule is scoped to `/endpoints` so the producers' event-ingest route stays private.
+
+---
+
+### List Webhook Endpoints
+
+**GET** `/endpoints`
+
+Returns the endpoints this key can act on. Endpoints carrying an event the key is not scoped for
+are filtered out by the service.
+
+**Query parameters:**
+- `page` (integer, optional) — 1-based page number
+- `items` (integer, optional) — page size
+
+**Response (200):**
+```json
+{
+  "data": [
+    {
+      "id": "2ec66c21-bf48-48eb-8d28-f80b2d6b77c7",
+      "target_url": "https://example.com/paubox-webhook",
+      "status": "active",
+      "events": ["forms.submission.created"],
+      "created_at": "2026-10-09T01:43:41.639968+00:00",
+      "updated_at": "2026-10-09T01:43:41.639968+00:00"
+    }
+  ],
+  "page_info": { "count": 1, "items": 50 }
+}
+```
+
+`page_info.count` is the total number of matching endpoints, not the length of `data`.
+
+**Ruby usage:**
+```ruby
+client = Paubox::WebhooksClient.new(api_key: ENV['PAUBOX_WEBHOOKS_API_KEY'])
+
+result = client.list_webhook_endpoints
+result = client.list_webhook_endpoints(page: 2, items: 25)
+```
+
+Returns the full document — `data` plus `page_info` — since a caller paginating needs both.
+
+---
+
+### Create Webhook Endpoint
+
+**POST** `/endpoints`
+
+**Request body:**
+- `target_url` (string, required) — an https URL resolving to a publicly routable address
+- `events` (array of strings, required, non-empty)
+
+**Response (201):**
+```json
+{
+  "data": {
+    "id": "2ec66c21-bf48-48eb-8d28-f80b2d6b77c7",
+    "target_url": "https://example.com/paubox-webhook",
+    "status": "active",
+    "events": ["forms.submission.created"],
+    "created_at": "2026-10-09T01:43:41.639968+00:00",
+    "updated_at": "2026-10-09T01:43:41.639968+00:00",
+    "signing_secret": "whsec_..."
+  },
+  "message": "Store this signing_secret now — it is not shown again."
+}
+```
+
+`signing_secret` is returned only here. It is absent from get and list, and cannot be read back:
+recovering from a lost secret means replacing the endpoint.
+
+**Errors:**
+- `422` — missing or malformed `target_url`, an empty `events`, an unrecognised event, or a
+  `target_url` that already has an endpoint
+- `403` — an event this key is not scoped for
+
+**Ruby usage:**
+```ruby
+endpoint = client.create_webhook_endpoint(
+  target_url: 'https://example.com/paubox-webhook',
+  events: ['forms.submission.created']
+)
+endpoint['signing_secret']
+```
+
+Returns the endpoint itself, unwrapped from the `data` envelope.
+
+---
+
+### Get Webhook Endpoint
+
+**GET** `/endpoints/<id>`
+
+**Path parameter:**
+- `id` (UUID, required)
+
+**Response (200):** the endpoint, wrapped in `data`. The signing secret is not included.
+
+**Errors:**
+- `404` — no such endpoint, or it belongs to another account
+
+**Ruby usage:**
+```ruby
+endpoint = client.get_webhook_endpoint('2ec66c21-bf48-48eb-8d28-f80b2d6b77c7')
+```
+
+An id that is not UUID-shaped raises `ArgumentError` before any request is sent.
+
+---
+
+### Update Webhook Endpoint
+
+**PATCH** `/endpoints/<id>`
+
+A partial update: only the fields sent are changed.
+
+**Request body (all optional, at least one required):**
+- `target_url` (string)
+- `status` (string) — `"active"` or `"disabled"`
+- `events` (array of strings) — replaces the list rather than adding to it
+
+**Response (200):** the updated endpoint, wrapped in `data`.
+
+**Ruby usage:**
+```ruby
+client.update_webhook_endpoint(id, status: 'disabled')
+client.update_webhook_endpoint(id, target_url: 'https://example.com/new-hook')
+```
+
+`disabled` pauses deliveries without losing the subscription; `active` resumes them.
+
+---
+
+### Delete Webhook Endpoint
+
+**DELETE** `/endpoints/<id>`
+
+**Response:**
+- `204` — deleted, no body
+- `404` — no such endpoint, or it belongs to another account
+
+Deleting stops every event on that endpoint and discards its signing secret.
+
+**Ruby usage:**
+```ruby
+client.delete_webhook_endpoint(id) # => true
+```
+
+---
+
+### Webhook Errors
+
+Every non-2xx response raises `Paubox::WebhooksClient::Error`:
+
+```ruby
+begin
+  client.get_webhook_endpoint(id)
+rescue Paubox::WebhooksClient::Error => e
+  e.status_code   # Integer
+  e.message       # the service's own message, e.g. "webhook endpoint not found"
+  e.url
+  e.response_body # raw response
+end
+```
+
+The error carries only those fields, so an error reporter capturing locals from the raising frame
+never sees the `Authorization` header or the API key.

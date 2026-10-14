@@ -497,6 +497,117 @@ pdf = client.submission_pdf('550e8400-e29b-41d4-a716-446655440000',
 File.binwrite('submission.pdf', pdf)
 ```
 
+<a name="#webhooks"></a>
+## Webhooks
+
+A webhook endpoint is a URL you own that Paubox notifies when something happens.
+`Paubox::WebhooksClient` manages those subscriptions: which URL to notify, and for which events.
+
+Every method needs an API key scoped for the events you want, sent as an `Authorization: Bearer`
+header — not the Email API's `Token token=`. Pass it to the constructor or configure it globally:
+
+```ruby
+require 'Paubox'
+
+client = Paubox::WebhooksClient.new(api_key: ENV['PAUBOX_WEBHOOKS_API_KEY'])
+
+# or globally:
+Paubox.configure { |config| config.webhooks_api_key = ENV['PAUBOX_WEBHOOKS_API_KEY'] }
+client = Paubox::WebhooksClient.new
+```
+
+Which events a key may subscribe to follows from its scopes. The SDK does not inspect them — the
+service refuses an event the key isn't scoped for with 403, and an unrecognised event with 422.
+
+**Available events**
+
+| Event | Fires when |
+| --- | --- |
+| `forms.submission.created` | A form submission is received |
+| `api_mail_log_delivered` | An Email API message is delivered |
+| `api_mail_log_opened` | A delivered message is opened |
+| `api_mail_log_temporary_failure` | Delivery fails temporarily |
+| `api_mail_log_permanent_failure` | Delivery fails permanently |
+| `email.inbound.received` | Inbound mail is received |
+
+The four Email API events keep their legacy `api_mail_log_` names, so a receiver written
+against the old Email API webhooks keeps working unchanged. Note these are the names on
+the wire: `delivered` or `failed` on their own are rejected as unknown.
+
+The SDK does not check these names. The catalog lives in the service, so an event added
+later works here without upgrading the SDK.
+
+### Creating a webhook endpoint
+
+```ruby
+endpoint = client.create_webhook_endpoint(
+  target_url: 'https://example.com/paubox-webhook',
+  events: ['forms.submission.created']
+)
+
+endpoint['id']             # UUID
+endpoint['signing_secret'] # whsec_... — store this now
+```
+
+`signing_secret` is returned **once**, here. It is absent from `get_webhook_endpoint` and
+`list_webhook_endpoints`, and there is no way to read it back — recovering from a lost secret
+means deleting the endpoint and creating a new one. Use it to verify that deliveries really came
+from Paubox.
+
+### Listing webhook endpoints
+
+```ruby
+result = client.list_webhook_endpoints
+
+result['data'].each do |endpoint|
+  puts [endpoint['id'], endpoint['target_url'], endpoint['status']].join(' ')
+end
+
+result['page_info']['count'] # total matching, not the length of this page
+
+# Paginated
+client.list_webhook_endpoints(page: 2, items: 25)
+```
+
+### Getting, updating and deleting
+
+```ruby
+endpoint = client.get_webhook_endpoint('2ec66c21-bf48-48eb-8d28-f80b2d6b77c7')
+
+# Only the keyword arguments you pass are sent
+endpoint = client.update_webhook_endpoint(id, status: 'disabled')
+
+client.delete_webhook_endpoint(id) # => true
+```
+
+Pausing deliveries without losing the subscription is what `disabled` is for; pass `active` to
+resume. Passing `events:` replaces the list rather than adding to it. Deleting answers `204 No
+Content`, stops every event on that endpoint, and takes the signing secret with it.
+
+### Error handling
+
+A non-2xx response raises `Paubox::WebhooksClient::Error`, carrying the service's own message
+rather than a bare status:
+
+```ruby
+begin
+  client.create_webhook_endpoint(target_url: url, events: ['forms.submission.created'])
+rescue Paubox::WebhooksClient::Error => e
+  e.status_code   # 422
+  e.message       # "target_url: an endpoint already exists for this URL"
+  e.response_body # raw response
+  e.url
+end
+```
+
+The error deliberately carries only those three fields, so an error reporter capturing locals from
+the raising frame never picks up the `Authorization` header or the API key.
+
+Two cases worth handling explicitly: subscribing a `target_url` that already has an endpoint comes
+back as 422, and an id that doesn't belong to your account is a 404 rather than a 403. An id that
+isn't a UUID raises `ArgumentError` locally, before any request is made, as does calling any
+method without an API key.
+
 <a name="#contributing"></a>
 ## Contributing
 
