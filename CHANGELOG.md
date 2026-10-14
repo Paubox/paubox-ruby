@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0](https://github.com/Paubox/paubox-ruby/compare/v1.3.1...v2.0.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* move webhook CRUD to the pb_webhooks service ([#36](https://github.com/Paubox/paubox-ruby/issues/36))
+
+### Features
+
+* move webhook CRUD to the pb_webhooks service ([#36](https://github.com/Paubox/paubox-ruby/issues/36)) ([a27d3b6](https://github.com/Paubox/paubox-ruby/commit/a27d3b6c2643d21368235077e7a92cf28da3d7e4))
+
 ## [1.3.1](https://github.com/Paubox/paubox-ruby/compare/v1.3.0...v1.3.1) (2026-10-02)
 
 
